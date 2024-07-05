@@ -114,6 +114,9 @@ class Span
         }
 
         foreach($headers as $key=>$value) {
+            if (is_array($value)) {
+                $value = $value[0];
+            }
             $span->setAttribute($responseHeaderPrefix. 'content-type', $value);
         }
 

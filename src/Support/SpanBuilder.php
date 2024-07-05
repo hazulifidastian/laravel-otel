@@ -134,6 +134,9 @@ class SpanBuilder
         $requestHeaderPrefix = 'http.request.header.';
 
         foreach ($headers as $key=>$value) {
+            if (is_array($value)) {
+                $value = $value[0];
+            }
             $this->attributes[$requestHeaderPrefix . $key] = $value;
         }
     }
