@@ -70,7 +70,7 @@ class KindServerTrace
 
         if ($statusCode === 200) {
             Span::ok();
-        } else {
+        } elseif ($statusCode >= 400 && $statusCode < 600) {  // 4xx - 5xx error
             Span::error($statusText);
         }
 
