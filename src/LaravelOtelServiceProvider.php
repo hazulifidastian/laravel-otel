@@ -61,7 +61,7 @@ class LaravelOtelServiceProvider extends ServiceProvider
             return new LaravelOtel();
         });
 
-        $resource = $this->buildResource(); 
+        $resource = $this->buildResource();
         $tracerProvider = $this->buildTracerProvider($resource);
         $propagator = TraceContextPropagator::getInstance();
         $meterProvider = $this->buildMeterProvider();
@@ -111,7 +111,9 @@ class LaravelOtelServiceProvider extends ServiceProvider
         $metricsReader = $this->metricsReader;
         $this->app->singleton('otel-metric', function () use ($metricsReader) {
             return new \Hazuli\LaravelOtel\Support\Metric(
-                $metricsReader, Globals::meterProvider()->getMeter('io.opentelemetry.contrib.php'));
+                $metricsReader,
+                Globals::meterProvider()->getMeter('io.opentelemetry.contrib.php')
+            );
         });
     }
 
@@ -127,7 +129,7 @@ class LaravelOtelServiceProvider extends ServiceProvider
 
         // Register the main class to use with the facade
         $this->app->singleton('laravel-otel', function () {
-            return new LaravelOtel;
+            return new LaravelOtel();
         });
     }
 

@@ -54,7 +54,7 @@ class KindServerTrace
             }
         }
 
-        Span::start((new SpanBuilder)->server($request));
+        Span::start((new SpanBuilder())->server($request));
 
         $response = $next($request);
 

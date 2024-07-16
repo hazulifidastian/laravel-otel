@@ -46,8 +46,8 @@ class SpanBuilder
             TraceAttributes::SERVER_ADDRESS => $request->getHost(),
 
             TraceAttributes::NETWORK_PROTOCOL_VERSION => $request->getProtocolVersion(),
-            TraceAttributes::ENDUSER_ID => $request->user()->email ?? null,
         ];
+
 
         $this->headers($request->headers->all());
 
@@ -71,7 +71,6 @@ class SpanBuilder
             TraceAttributes::SERVER_ADDRESS => $request->getHost(),
 
             TraceAttributes::NETWORK_PROTOCOL_VERSION => $request->getProtocolVersion(),
-            TraceAttributes::ENDUSER_ID => request()->user()->email ?? null,
         ];
 
         $this->headers($request->headers->all());
@@ -109,7 +108,7 @@ class SpanBuilder
         return $this;
     }
 
-    public function database(string $name=''): self
+    public function database(string $name = ''): self
     {
         $prefix = 'DB';
         $this->name = $prefix . ' ' . $name;
@@ -119,7 +118,7 @@ class SpanBuilder
         return $this;
     }
 
-    public function failedNotification(string $name=''): self
+    public function failedNotification(string $name = ''): self
     {
         $prefix = 'FAILED_NOTIFICATION';
         $this->name = $prefix . ' ' . $name;
@@ -133,7 +132,7 @@ class SpanBuilder
     {
         $requestHeaderPrefix = 'http.request.header.';
 
-        foreach ($headers as $key=>$value) {
+        foreach ($headers as $key => $value) {
             if (is_array($value)) {
                 $value = $value[0];
             }
