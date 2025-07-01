@@ -8,10 +8,18 @@ use Monolog\LogRecord;
 
 class OpenTelemetryMonologHandler extends AbstractProcessingHandler
 {
-    protected function write(LogRecord $record): void
+    protected function write(array|LogRecord $record): void
     {
-        $level = $record->level->toPsrLogLevel();
+        if ($record instanceof LogRecord) {
+            $level = $record->level->toPsrLogLevel();
+            $message = $record->message;
+            $context = $record->context;
+        } else {
+            $level = $record['level']->toPsrLogLevel();
+            $message = $record['message'];
+            $context = $record['context'] ?? [];
+        }
 
-        Logger::log($level, $record->message, $record->context);
+        Logger::log($level, $message, $context);
     }
 }
