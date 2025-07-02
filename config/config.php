@@ -6,6 +6,8 @@ use \Illuminate\Support\Str;
  * You can place your custom package configuration in here.
  */
 return [
+    'enabled' => env('OTEL_ENABLED', false),
+
     'cache_store' => env('OTEL_CACHE_STORE', 'file'),
 
     'service_name' => env('OTEL_SERVICE_NAME', Str::slug(env('APP_NAME', 'laravel-app'))),

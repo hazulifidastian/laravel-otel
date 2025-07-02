@@ -37,15 +37,16 @@ use OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
 use OpenTelemetry\SDK\Logs\LoggerProvider;
 use OpenTelemetry\SDK\Logs\LoggerProviderInterface;
 use OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
+use OpenTelemetry\SDK\Logs\NoopLoggerProvider;
 use OpenTelemetry\SDK\Logs\Processor\BatchLogRecordProcessor;
 use OpenTelemetry\SDK\Metrics\StalenessHandler\ImmediateStalenessHandlerFactory;
 use OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\WithSampledTraceExemplarFilter;
+use OpenTelemetry\SDK\Metrics\NoopMeterProvider;
+use OpenTelemetry\SDK\Trace\NoopTracerProvider;
 use OpenTelemetry\SemConv\TraceAttributes;
 
 class LaravelOtelServiceProvider extends ServiceProvider
 {
-    private ExportingReader $metricsReader;
-
     /**
      * Bootstrap the application services.
      */
@@ -64,7 +65,12 @@ class LaravelOtelServiceProvider extends ServiceProvider
         $resource = $this->buildResource();
         $tracerProvider = $this->buildTracerProvider($resource);
         $propagator = TraceContextPropagator::getInstance();
-        $meterProvider = $this->buildMeterProvider();
+        $metricsReader = new ExportingReader(
+            new MetricExporter(
+                (new OtlpHttpTransportFactory())->create(config('laravel-otel.metrics.endpoint'), 'application/json')
+            )
+        );
+        $meterProvider = $this->buildMeterProvider($metricsReader);
         $loggerProvider = $this->buildLoggerProvider($resource);
 
         Sdk::builder()
@@ -108,7 +114,6 @@ class LaravelOtelServiceProvider extends ServiceProvider
             return new Storage();
         });
 
-        $metricsReader = $this->metricsReader;
         $this->app->singleton('otel-metric', function () use ($metricsReader) {
             return new \Hazuli\LaravelOtel\Support\Metric(
                 $metricsReader,
@@ -143,6 +148,10 @@ class LaravelOtelServiceProvider extends ServiceProvider
 
     private function buildTracerProvider(ResourceInfo $resource): TracerProviderInterface
     {
+        if(config('laravel-otel.enabled') === false) {
+            return new NoopTracerProvider();
+        }
+
         if (config('laravel-otel.traces.exporter') === 'otlp') {
             $transport = (new OtlpHttpTransportFactory())->create(config('laravel-otel.traces.endpoint'), 'application/json');
         }
@@ -159,17 +168,15 @@ class LaravelOtelServiceProvider extends ServiceProvider
         return $tracerProvider;
     }
 
-    private function buildMeterProvider(): MeterProviderInterface
+    private function buildMeterProvider(ExportingReader $metricsReader): MeterProviderInterface
     {
+        if(config('laravel-otel.enabled') === false) {
+            return new NoopMeterProvider();
+        }
+
         $resource = ResourceInfoFactory::emptyResource()->merge(ResourceInfo::create(Attributes::create([
             ResourceAttributes::SERVICE_NAME => config('laravel-otel.service_name'),
         ])));
-
-        $this->metricsReader = new ExportingReader(
-            new MetricExporter(
-                (new OtlpHttpTransportFactory())->create(config('laravel-otel.metrics.endpoint'), 'application/json')
-            )
-        );
 
         $meterProvider = new MeterProvider(
             null,
@@ -177,7 +184,7 @@ class LaravelOtelServiceProvider extends ServiceProvider
             ClockFactory::getDefault(),
             Attributes::factory(),
             new InstrumentationScopeFactory(Attributes::factory()),
-            [$this->metricsReader],
+            [$metricsReader],
             new CriteriaViewRegistry(),
             new WithSampledTraceExemplarFilter(),
             new ImmediateStalenessHandlerFactory(),
@@ -188,6 +195,10 @@ class LaravelOtelServiceProvider extends ServiceProvider
 
     private function buildLoggerProvider(ResourceInfo $resource): LoggerProviderInterface
     {
+        if(config('laravel-otel.enabled') === false) {
+            return new NoopLoggerProvider();
+        }
+
         $logExporter = new LogsExporter(
             (new OtlpHttpTransportFactory())->create(config('laravel-otel.logs.endpoint'), 'application/json')
         );
